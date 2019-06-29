@@ -1,0 +1,23 @@
+name: 'PreProcessing Job'
+description: |
+  Convert the tweets to vectors of numbers
+inputs:
+  - {name: s3TrainingData, description: 'The training data location'}
+  - {name: s3TestingData, description: 'The testing data location.'}
+  - {name: s3RawData, description: 'The raw data.'}
+outputs:
+  - {name: model_artifact_url,    description: 'Model artifacts url'}
+  - {name: job_name,              description: 'Training job name'}
+implementation:
+  container:
+    image: seedjeffwan/kubeflow-pipeline-aws-sm:20190501-05
+    command: ['python']
+    args: [
+      preprocess.py,
+      --s3TrainingData, {inputValue: s3TrainingData},
+      --s3TestingData, {inputValue: s3TestingData},
+      --s3RawData, {inputValue: s3RawData}
+    ]
+    fileOutputs:
+      model_artifact_url: /tmp/model_artifact_url.txt
+      job_name: /tmp/job_name.txt

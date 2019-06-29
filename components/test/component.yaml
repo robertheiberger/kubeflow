@@ -1,0 +1,26 @@
+name: 'Training Job'
+description: |
+  Train Machine Learning and Deep Learning Models
+inputs:
+  - {name: s3TrainingData, description: 'The region where the training job launches.'}
+  - {name: s3OutputData, description: 'The registry path of the Docker image that contains the training algorithm.'}
+  - {name: s3ModelData, description: 'The ML compute instance type.'}
+  - {name: ModelName, description: 'The registry path of the Docker image that contains the training algorithm.'}
+outputs:
+  - {name: model_artifact_url,    description: 'Model artifacts url'}
+  - {name: job_name,              description: 'Training job name'}
+implementation:
+  container:
+    image: seedjeffwan/kubeflow-pipeline-aws-sm:20190501-05
+    command: ['python']
+    args: [
+      train.py,
+      --s3TrainingData, {inputValue: s3TrainingData},
+      --s3OutputData, {inputValue: s3OutputData},
+      --s3ModelData, {inputValue: s3ModelData},
+      --ModelName, {inputValue: ModelName}
+      --role, {inputValue: role}
+    ]
+    fileOutputs:
+      model_artifact_url: /tmp/model_artifact_url.txt
+      job_name: /tmp/job_name.txt
