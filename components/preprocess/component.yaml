@@ -1,23 +1,27 @@
-name: 'PreProcessing Job'
+name: 'pre-processing'
 description: |
   Convert the tweets to vectors of numbers
 inputs:
-  - {name: s3TrainingData, description: 'The training data location'}
-  - {name: s3TestingData, description: 'The testing data location.'}
-  - {name: s3RawData, description: 'The raw data.'}
+  - {name: s3_raw_data, description: 'The raw data.'}
+  - {name: model_name, description: 'Model Name'}
 outputs:
-  - {name: model_artifact_url,    description: 'Model artifacts url'}
-  - {name: job_name,              description: 'Training job name'}
+  - {name: s3_training_predictions,              description: 'Training job name'}
+  - {name: s3_testing_predictions,              description: 'Training job name'}
+  - {name: s3_training_data,              description: 'Training job name'}
+  - {name: s3_testing_data,              description: 'Training job name'}
+  - {name: s3_model_artifacts,              description: 'Training job name'}
 implementation:
   container:
-    image: seedjeffwan/kubeflow-pipeline-aws-sm:20190501-05
+    image: 001178237879.dkr.ecr.us-east-1.amazonaws.com/kubeflow-components:latest
     command: ['python']
     args: [
       preprocess.py,
-      --s3TrainingData, {inputValue: s3TrainingData},
-      --s3TestingData, {inputValue: s3TestingData},
-      --s3RawData, {inputValue: s3RawData}
+      --s3_raw_data, {inputValue: s3_raw_data},
+      --model_name, {inputValue: model_name}
     ]
     fileOutputs:
-      model_artifact_url: /tmp/model_artifact_url.txt
-      job_name: /tmp/job_name.txt
+      s3_training_predictions: /tmp/s3_training_predictions.txt
+      s3_testing_predictions: /tmp/s3_testing_predictions.txt
+      s3_training_data: /tmp/s3_training_data.txt
+      s3_testing_data: /tmp/s3_testing_data.txt
+      s3_model_artifacts: /tmp/s3_model_artifacts.txt
