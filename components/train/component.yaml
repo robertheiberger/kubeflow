@@ -7,6 +7,7 @@ inputs:
   - {name: s3_model_artifacts, description: 'The location to save the model artifacts.'}
   - {name: model_name, description: 'The name of the model.'}
 outputs:
+  - {name: s3_training_predictions,    description: 'Model artifacts url'}
   - {name: s3_model_artifacts,    description: 'Model artifacts url'}
 implementation:
   container:
@@ -20,5 +21,6 @@ implementation:
       --model_name, {inputValue: model_name}
     ]
     fileOutputs:
+      s3_model_artifacts: /tmp/s3_training_predictions.txt
       s3_model_artifacts: /tmp/s3_model_artifacts.txt
 
