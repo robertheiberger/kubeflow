@@ -1,26 +1,23 @@
-name: 'Training Job'
+name: 'testing'
 description: |
   Train Machine Learning and Deep Learning Models
 inputs:
-  - {name: s3TrainingData, description: 'The region where the training job launches.'}
-  - {name: s3OutputData, description: 'The registry path of the Docker image that contains the training algorithm.'}
-  - {name: s3ModelData, description: 'The ML compute instance type.'}
-  - {name: ModelName, description: 'The registry path of the Docker image that contains the training algorithm.'}
+  - {name: s3_testing_data, description: 'The region where the training job launches.'}
+  - {name: s3_testing_predictions, description: 'The registry path of the Docker image that contains the training algorithm.'}
+  - {name: s3_model_artifacts, description: 'The ML compute instance type.'}
+  - {name: model_name, description: 'The registry path of the Docker image that contains the training algorithm.'}
 outputs:
-  - {name: model_artifact_url,    description: 'Model artifacts url'}
-  - {name: job_name,              description: 'Training job name'}
+  - {name: s3_testing_predictions,              description: 'Training job name'}
 implementation:
   container:
-    image: seedjeffwan/kubeflow-pipeline-aws-sm:20190501-05
+    image: 001178237879.dkr.ecr.us-east-1.amazonaws.com/kubeflow-components:latest
     command: ['python']
     args: [
       train.py,
-      --s3TrainingData, {inputValue: s3TrainingData},
-      --s3OutputData, {inputValue: s3OutputData},
-      --s3ModelData, {inputValue: s3ModelData},
-      --ModelName, {inputValue: ModelName}
-      --role, {inputValue: role}
+      --s3_testing_data, {inputValue: s3_testing_data},
+      --s3_testing_predictions, {inputValue: s3_testing_predictions},
+      --s3_model_artifacts, {inputValue: s3_model_artifacts},
+      --model_name, {inputValue: model_name}
     ]
     fileOutputs:
-      model_artifact_url: /tmp/model_artifact_url.txt
-      job_name: /tmp/job_name.txt
+      s3_testing_predictions: /tmp/s3_testing_predictions.txt
