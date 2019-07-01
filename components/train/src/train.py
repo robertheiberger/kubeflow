@@ -299,38 +299,58 @@ def generate_model(X_train, y_train, vocab_size, max_length):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='SageMaker Training Job')
-    parser.add_argument('--s3TrainingData', type=str, help='Training Dataset.')
-    parser.add_argument('--s3TrainingPredictions', type=str, help='Location to place training results.')
-    parser.add_argument('--s3ModelArtifacts', type=str, help='Location for Model Artifacts')
-    parser.add_argument('--ModelName', type=str, help='Location for Model Artifacts')
+    parser.add_argument('--s3_training_data', type=str, help='Training Dataset.')
+    parser.add_argument('--s3_training_predictions', type=str, help='Location to place training results.')
+    parser.add_argument('--s3_model_artifacts', type=str, help='Location for Model Artifacts')
+    parser.add_argument('--model_name', type=str, help='Location for Model Artifacts')
+    parser.add_argument('--max_length', type=str, help='Location for Model Artifacts')
+    parser.add_argument('--vocab_size', type=str, help='Location for Model Artifacts')
     args = parser.parse_args()
 
-    training_data_file = utils.s3_get_file(args.S3TrainingData)
+    training_data_file = utils.s3_get_file(args.s3_training_data)
 
     print('Starting the training.')
     try:
         
-        # read in training data
+        # read in training data to pandas dataframe.
         raw_data = pd.read_csv(training_data_file)
 
-        # pre process the training data
-        x_train, y_train, vocab_size, max_length = data_process(raw_data)        
+        y_train = raw_data['sentiment']
+        
+        # one hot encode the sentiment
+        encoder = LabelEncoder()
+        encoder.fit(y_train)
+        encoded_train_y = encoder.transform(y_train)
+        dummy_train_y = np_utils.to_categorical(encoded_train_y)
+    
+        collist = raw_data.columns.tolist()
+        collist.remove('sentiment')
+        x_train = raw_data[collist]
         
         # create keras classifier and fit the model
-        optimized_classifier = generate_model(x_train, y_train, vocab_size, max_length)
+        optimized_classifier = generate_model(x_train, dummy_train_y, args.vocab_size, args.max_length)
         
         # make predictions with training data
         predictions = optimized_classifier.predict(y_train)
         
+        #write predictions to file system
+        train.to_csv(os.path.join(model_path, 'predictions.csv'), sep=',')
+        
         # save the model to the hard drive
-        optimized_classifier.model.save(os.path.join(model_path, args.ModelName))
+        optimized_classifier.model.save(os.path.join(model_path, args.model_name))
         
         # upload model to s3
-        utils.s3_upload_file(args.S3ModelData, os.path.join(model_path, args.ModelName))
+        utils.s3_upload_file(args.s3_model_artifacts, os.path.join(model_path, args.model_name))
         
         # upload training predictions
-        utils.s3_upload_file(args.s3OutputData, os.path.join(model_path, 'predictions.csv'))
+        utils.s3_upload_file('{}/predictions.csv'.format(args.s3_training_predictions), os.path.join(model_path, 'predictions.csv'))
         
+        with open('/tmp/s3_training_predictions.txt', 'w') as f:
+            f.write('{}/predictions.csv'.format(s3_training_predictions))
+            
+        with open('/tmp/s3_model_artifacts.txt', 'w') as f:
+            f.write('{}/model.tar.z'.format(s3_model_artifacts))
+            
         print('Training is complete.')
         
     except Exception as e:
