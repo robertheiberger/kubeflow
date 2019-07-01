@@ -6,6 +6,8 @@ inputs:
   - {name: s3_training_predictions, description: 'The location to save the predicted values.'}
   - {name: s3_model_artifacts, description: 'The location to save the model artifacts.'}
   - {name: model_name, description: 'The name of the model.'}
+  - {name: max-length, description: 'The name of the model.'}
+  - {name: vocab-size, description: 'The name of the model.'}
 outputs:
   - {name: s3_training_predictions,    description: 'Model artifacts url'}
   - {name: s3_model_artifacts,    description: 'Model artifacts url'}
