@@ -366,6 +366,10 @@ def main(argv=None):
             f.write('{}/test.csv'.format(s3_testing_data))
         with open('/tmp/s3_model_artifacts.txt', 'w') as f:
             f.write(s3_model_artifacts)
+        with open('/tmp/max_length.txt', 'w') as f:
+            f.write(max_length)
+        with open('/tmp/vocab_size.txt', 'w') as f:
+            f.write(vocab_size)
     
         print('Preprocess is complete.')
         
