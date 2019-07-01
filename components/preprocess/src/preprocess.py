@@ -324,7 +324,7 @@ def main(argv=None):
     s3_testing_data = "{}/{}/data/test/input".format(args.s3_model_data, s3_model_run_id)
     s3_model_artifacts = "{}/{}/artifacts".format(args.s3_model_data, s3_model_run_id)
     
-    data_file = utils.s3_get_file(args.s3_model_data)
+    data_file = utils.s3_get_file(args.s3_model_data, input_path)
 
     print('Starting the preprocess.')
     try:
@@ -353,8 +353,8 @@ def main(argv=None):
         test.to_csv(os.path.join(model_path, 'test.csv'), sep=',')
         
         # upload training and test data to s3
-        utils.s3_upload_file(s3_training_data, os.path.join(model_path, 'train.csv'))
-        utils.s3_upload_file(s3_testing_data, os.path.join(model_path, 'test.csv'))
+        utils.s3_upload_file('{}/train.csv'.format(s3_training_data), os.path.join(model_path, 'train.csv'))
+        utils.s3_upload_file('{}/test.csv'.format(s3_testing_data), os.path.join(model_path, 'test.csv'))
         
         with open('/tmp/s3_training_predictions.txt', 'w') as f:
             f.write(s3_training_predictions)
