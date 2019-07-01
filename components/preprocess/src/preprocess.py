@@ -343,7 +343,7 @@ def main(argv=None):
         # give columns numeric names
         cols = [str(i) for i in list(range(max_length+1))]
         
-        cols[0]='sentiment'
+        cols[max_length]='sentiment'
         
         train.columns = cols
         test.columns = cols
