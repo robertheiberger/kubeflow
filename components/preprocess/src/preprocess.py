@@ -16,6 +16,7 @@ import random
 import pandas as pd
 from datetime import datetime
 from common import utils
+from common import S3Url
 
 #!/usr/bin/env python
 
@@ -299,12 +300,31 @@ def generate_model(X_train, y_train, vocab_size, max_length):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='SageMaker Training Job')
-    parser.add_argument('--s3RawData', type=str, help='Training Dataset.')
-    parser.add_argument('--s3TrainingData', type=str, help='Testing Dataset.')
-    parser.add_argument('--s3TestingData', type=str, help='Location to place training results.')
+    parser.add_argument('--s3_model_data', type=str, help='Training Dataset.')
+    parser.add_argument('--model_name', type=str, help='Testing Dataset.')
     args = parser.parse_args()
+    
+    rightnow = datetime.now()
+    
+    s3url = S3Url(args.s3_model_data)
+    
+    # marking a unique model run
+    s3_model_run_id = "{}_{}{}{}{}{}{}".format(
+        args.model_name,
+        rightnow.year, 
+        rightnow.month, 
+        rightnow.day,
+        rightnow.hour, 
+        rightnow.minute, 
+        rightnow.second)
 
-    data_file = utils.s3_get_file(args.s3RawData)
+    s3_training_predictions = "{}/{}/data/train/pred".format(args.s3_model_data, s3_model_run_id)
+    s3_testing_predictions = "{}/{}/data/test/pred".format(args.s3_model_data, s3_model_run_id)
+    s3_training_data = "{}/{}/data/train/input".format(args.s3_model_data, s3_model_run_id)
+    s3_testing_data = "{}/{}/data/test/input".format(args.s3_model_data, s3_model_run_id)
+    s3_model_artifacts = "{}/{}/artifacts".format(args.s3_model_data, s3_model_run_id)
+    
+    data_file = utils.s3_get_file(args.s3_model_data)
 
     print('Starting the preprocess.')
     try:
@@ -333,9 +353,20 @@ def main(argv=None):
         test.to_csv(os.path.join(model_path, 'test.csv'), sep=',')
         
         # upload training and test data to s3
-        utils.s3_upload_file(args.s3TrainingData, os.path.join(model_path, 'train.csv'))
-        utils.s3_upload_file(args.s3TestingData, os.path.join(model_path, 'test.csv'))
+        utils.s3_upload_file(s3_training_data, os.path.join(model_path, 'train.csv'))
+        utils.s3_upload_file(s3_testing_data, os.path.join(model_path, 'test.csv'))
         
+        with open('/tmp/s3_training_predictions.txt', 'w') as f:
+            f.write(s3_training_predictions)
+        with open('/tmp/s3_testing_predictions.txt', 'w') as f:
+            f.write(s3_testing_predictions)
+        with open('/tmp/s3_training_data.txt', 'w') as f:
+            f.write('{}/train.csv'.format(s3_training_data)
+        with open('/tmp/s3_testing_data.txt', 'w') as f:
+            f.write('{}/test.csv'.format(s3_testing_data))
+        with open('/tmp/s3_model_artifacts.txt', 'w') as f:
+            f.write(s3_model_artifacts)
+    
         print('Preprocess is complete.')
         
     except Exception as e:
