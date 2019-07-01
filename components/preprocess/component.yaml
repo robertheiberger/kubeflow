@@ -5,11 +5,13 @@ inputs:
   - {name: s3_raw_data, description: 'The raw data.'}
   - {name: model_name, description: 'Model Name'}
 outputs:
-  - {name: s3_training_predictions,              description: 'Training job name'}
-  - {name: s3_testing_predictions,              description: 'Training job name'}
-  - {name: s3_training_data,              description: 'Training job name'}
-  - {name: s3_testing_data,              description: 'Training job name'}
-  - {name: s3_model_artifacts,              description: 'Training job name'}
+  - {name: s3_training_predictions, description: 'Training job name'}
+  - {name: s3_testing_predictions,  description: 'Training job name'}
+  - {name: s3_training_data,        description: 'Training job name'}
+  - {name: s3_testing_data,         description: 'Training job name'}
+  - {name: s3_model_artifacts,      description: 'Training job name'}
+  - {name: max_length,              description: 'Training job name'}
+  - {name: vocab_size,              description: 'Training job name'}
 implementation:
   container:
     image: 001178237879.dkr.ecr.us-east-1.amazonaws.com/kubeflow-components:latest
@@ -25,3 +27,5 @@ implementation:
       s3_training_data: /tmp/s3_training_data.txt
       s3_testing_data: /tmp/s3_testing_data.txt
       s3_model_artifacts: /tmp/s3_model_artifacts.txt
+      max_length: /tmp/max_length.txt
+      vocab_size: /tmp/vocab_size.txt
