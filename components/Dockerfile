@@ -19,6 +19,7 @@ RUN pip install boto3==1.9.130 sagemaker pathlib2
 
 COPY train/src/train.py .
 COPY test/src/test.py .
+COPY test/src/preprocess.py .
 
 COPY common /app/common/
 
