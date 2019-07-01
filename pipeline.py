@@ -31,14 +31,18 @@ def twitter_classification(
         s3_training_data = preprocess.outputs['s3_training_data'],
         s3_training_predictions = preprocess.outputs['s3_training_predictions'],
         s3_model_artifacts = preprocess.outputs['s3_model_artifacts'],
-        model_name = model_name
+        model_name = model_name,
+        max_length = preprocess.outputs['max_length'],
+        vocab_size = preprocess.outputs['vocab_size']
     ).apply(use_aws_secret('aws-secret', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'))
 
     testing = test_op(
         s3_testing_data = preprocess.outputs['s3_testing_data'],
         s3_testing_predictions = preprocess.outputs['s3_testing_predictions'],
         s3_model_artifacts = training.outputs['s3_model_artifacts'],
-        model_name = model_name
+        model_name = model_name,
+        max_length = preprocess.outputs['max_length'],
+        vocab_size = preprocess.outputs['vocab_size']
     ).apply(use_aws_secret('aws-secret', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'))
 
 if __name__ == '__main__':
