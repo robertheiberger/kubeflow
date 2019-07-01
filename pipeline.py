@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import kfp
 from kfp import components
 from kfp import dsl
@@ -13,45 +15,30 @@ preprocess_op = components.load_component_from_file('components/preprocess/compo
     description='Twitter Classification using NNet in Kubeflow'
 )
 def twitter_classification(
-    image='174872318107.dkr.ecr.us-west-2.amazonaws.com/kmeans:1',
-    s3RawData='s3://kubeflow-pipeline-meda/data/raw/tweets.csv',
-    s3ModelData='s3://kubeflow-pipeline-meda/models',
-    ModelName = 'NNET',
-    role_arn=''
+    s3_raw_data = 's3://kubeflow-meda/data/raw/tweets.csv',
+    s3_model_data = 's3://kubeflow-meda/models',
+    model_name = 'NNET'
     ):
     
-    now = datetime.datetime.now()
-    
-    # marking a unique model run
-    s3ModelRunId = "{}_{}{}{}{}{}{}".format(modelName, a.year, a.month, a.day, a.hour, a.minute, a.second)
-    
-    # setting folder structure
-    s3TrainingPredictions = "{}/{}/data/train/pred".format(s3ModelData, s3ModelRunId)
-    s3TestingPredictions = "{}/{}/data/test/pred".format(s3ModelData, s3ModelRunId)
-    s3TrainingData = "{}/{}/data/train/input".format(s3ModelData, s3ModelRunId)
-    s3TestingData = "{}/{}/data/test/input".format(s3ModelData, s3ModelRunId)
-    s3ModelArtifacts = "{}/{}/artifacts".format(s3ModelData, s3ModelRunId)
-    
-    # preprocess data. cleansing and feature engineering
+    # preprocess data. cleansing and feature engineering. Also creating s3 folder structure to 
+    # store data and artifacts of the model run.
     preprocess = preprocess_op(
-        s3RawData=s3RawData,
-        s3TrainingData=s3TrainingData,
-        s3TestingData=s3TestingData,
+        s3_raw_data = s3_raw_data,
+        model_name = model_name
     ).apply(use_aws_secret('aws-secret', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'))
-
+    
     training = train_op(
-        s3TrainingData="{}/{}".format(s3TrainingData, 'tweets.csv'),
-        s3TrainingPredictions="{}/{}".format(s3TestingData, 'tweets.csv'),
-        s3ModelArtifacts = s3ModelArtifacts,
-        ModelName = ModelName
+        s3_training_data = preprocess.outputs['s3_training_data'],
+        s3_training_predictions = preprocess.outputs['s3_training_predictions'],
+        s3_model_artifacts = preprocess.outputs['s3_model_artifacts'],
+        model_name = model_name
     ).apply(use_aws_secret('aws-secret', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'))
 
     testing = test_op(
-        region=region,
-        image=image,
-        model_artifact_url=training.outputs['model_artifact_url'],
-        model_name=training.outputs['job_name'],
-        role=role_arn
+        s3_testing_data = preprocess.outputs['s3_testing_data'],
+        s3_testing_predictions = preprocess.outputs['s3_testing_predictions'],
+        s3_model_artifacts = training.outputs['s3_model_artifacts'],
+        model_name = model_name
     ).apply(use_aws_secret('aws-secret', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'))
 
 if __name__ == '__main__':
