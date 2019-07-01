@@ -21,20 +21,13 @@ from botocore.exceptions import ClientError
 import json
 import S3Url
 
-def s3_get_file(file_name):
+def s3_get_file(file_name, input_path):
     
     s3f = S3Url(file_name)
     s3 = boto3.resource('s3')
-    s3.download_file(s3f.bucket, s3f.key, s3f.file_name)
-    return s3f.file_name
+    s3.download_file(s3f.bucket, s3f.key, '{}/{}'.format(input_path, s3f.file_name))
     
-def s3_get_test_file(test_file):
-
-    return s3_get_file(test_file)
-
-def get_train_file(train_file):
-    
-    return s3_get_file(train_file)
+    return '{}/{}'.format(input_path, s3f.file_name)
 
 def encrypt_file(file_name, kms_key):
     
@@ -45,10 +38,12 @@ def decrypt_file(file_name, kms_key):
     
     return "Success"
     
-def s3_upload_file(bucket, s3folder, file_name):
+def s3_upload_file(s3_location, local_file):
 
     s3 = boto3.resource('s3')
-    s3.meta.client.upload_file(file_name, bucket, '{}/{}'.format(s3folder, file_name))
+    s3f = S3Url(file_name)
+    
+    s3.meta.client.upload_file(local_file, s3f.bucket, s3f.key)
 
     
     
