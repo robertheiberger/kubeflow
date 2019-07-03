@@ -19,12 +19,16 @@ import time
 import boto3
 from botocore.exceptions import ClientError
 import json
-import S3Url
+from common.S3Url import S3Url
 
 def s3_get_file(file_name, input_path):
     
     s3f = S3Url(file_name)
     s3 = boto3.client('s3')
+    
+    if not os.path.exists(input_path):
+        os.makedirs(input_path)
+    
     s3.download_file(s3f.bucket, s3f.key, '{}/{}'.format(input_path, s3f.file_name))
     
     return '{}/{}'.format(input_path, s3f.file_name)
@@ -42,9 +46,9 @@ def s3_upload_file(s3_location, local_file):
 
     s3 = boto3.client('s3')
     
-    s3f = S3Url(file_name)
+    s3f = S3Url(s3_location)
     
-    s3.client.upload_file(local_file, s3f.bucket, s3f.key)
+    s3.upload_file(local_file, s3f.bucket, s3f.key)
 
     
     
