@@ -9,18 +9,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#!/usr/bin/env python
+from __future__ import print_function
 
 import argparse
 import logging
 import random
 import pandas as pd
-from datetime import datetime
+import datetime
+
+from common.S3Url import S3Url
 from common import utils
-from common import S3Url
-
-#!/usr/bin/env python
-
-from __future__ import print_function
 
 import os
 import sys
@@ -41,6 +40,12 @@ import re
 from string import punctuation 
 from nltk.corpus import stopwords 
 from nltk.tokenize import word_tokenize
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+
+from nltk.tokenize import TweetTokenizer
+tokenizer = TweetTokenizer()
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -132,64 +137,8 @@ contraction_mapping = {"ain't": "is not", "aren't": "are not","can't": "cannot",
                    "you'd": "you would", "you'd've": "you would have", "you'll": "you will", 
                    "you'll've": "you will have", "you're": "you are", "you've": "you have" } 
 
-smileys ={
-        ":‑)":"smiley",
-        ":-]":"smiley",
-        ":-3":"smiley",
-        ":->":"smiley",
-        "8-)":"smiley",
-        ":-}":"smiley",
-        ":)":"smiley",
-        ":]":"smiley",
-        ":3":"smiley",
-        ":>":"smiley",
-        "8)":"smiley",
-        ":}":"smiley",
-        ":o)":"smiley",
-        ":c)":"smiley",
-        ":^)":"smiley",
-        "=]":"smiley",
-        "=)":"smiley",
-        ":-))":"smiley",
-        ":‑D":"smiley",
-        "8‑D":"smiley",
-        "x‑D":"smiley",
-        "X‑D":"smiley",
-        ":D":"smiley",
-        "8D":"smiley",
-        "xD":"smiley",
-        "XD":"smiley",
-        ":‑(":"sad",
-        ":‑c":"sad",
-        ":‑<":"sad",
-        ":‑[":"sad",
-        ":(":"sad",
-        ":c":"sad",
-        ":<":"sad",
-        ":[":"sad",
-        ":-||":"sad",
-        ">:[":"sad",
-        ":{":"sad",
-        ":@":"sad",
-        ">:(":"sad",
-        ":'‑(":"sad",
-        ":'(":"sad",
-        ":‑P":"playful",
-        "X‑P":"playful",
-        "x‑p":"playful",
-        ":‑p":"playful",
-        ":‑Þ":"playful",
-        ":‑þ":"playful",
-        ":‑b":"playful",
-        ":P":"playful",
-        "XP":"playful",
-        "xp":"playful",
-        ":p":"playful",
-        ":Þ":"playful",
-        ":þ":"playful",
-        ":b":"playful",
-        "<3":"love"
-        }
+smileys={":‑)":"smiley",":-]":"smiley",":-3":"smiley",":->":"smiley","8-)":"smiley",":-}":"smiley",":)":"smiley",":]":"smiley",":3":"smiley",":>":"smiley","8)":"smiley",":}":"smiley",":o)":"smiley",":c)":"smiley",":^)":"smiley","=]":"smiley","=)":"smiley",":-))":"smiley",":‑D":"smiley","8‑D":"smiley","x‑D":"smiley","X‑D":"smiley",":D":"smiley","8D":"smiley","xD":"smiley","XD":"smiley",":‑(":"sad",":‑c":"sad",":‑<":"sad",":‑[":"sad",":(":"sad",":c":"sad",":<":"sad",":[":"sad",":-||":"sad",">:[":"sad",":{":"sad",":@":"sad",">:(":"sad",":'‑(":"sad",":'(":"sad",":‑P":"playful","X‑P":"playful","x‑p":"playful",":‑p":"playful",":‑Þ":"playful",":‑þ":"playful",":‑b":"playful",":P":"playful","XP":"playful","xp":"playful",":p":"playful",":Þ":"playful",":þ":"playful",":b":"playful","<3":"love"}
+
         
 def clean_tokens(tweet):
 
@@ -254,7 +203,7 @@ def data_process(raw_data):
     
     raw_data=raw_data[raw_data['sentiment']!='MIXED']
 
-    raw_data['tweet'] = raw_data['tweet'].apply(lambda x: clean_tokens(str(x)))
+    raw_data['tweet'] = raw_data['tweet'].apply(lambda x: " ".join(clean_tokens(str(x))))
 
     x = raw_data['tweet']
     y = raw_data['sentiment']
@@ -267,7 +216,7 @@ def data_process(raw_data):
     tokenizer_obj = Tokenizer()   
 
     tokenizer_obj.fit_on_texts(x)    
-    max_length = max([len(s.split()) for s in x])    
+    max_length = max([len(s.split(" ")) for s in x])    
     vocab_size = len(tokenizer_obj.word_index)+1  
 
     #Building the vectors of words
@@ -300,13 +249,13 @@ def generate_model(X_train, y_train, vocab_size, max_length):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='SageMaker Training Job')
-    parser.add_argument('--s3_model_data', type=str, help='Training Dataset.')
-    parser.add_argument('--model_name', type=str, help='Testing Dataset.')
+    parser.add_argument('--s3_raw_data', type=str, help='Training Dataset.')
+    parser.add_argument('--model_name', type=str, help='Model Name.')
     args = parser.parse_args()
     
-    rightnow = datetime.now()
+    rightnow = datetime.datetime.now()
     
-    s3url = S3Url(args.s3_model_data)
+    s3url = S3Url(args.s3_raw_data)
     
     # marking a unique model run
     s3_model_run_id = "{}_{}{}{}{}{}{}".format(
@@ -318,25 +267,27 @@ def main(argv=None):
         rightnow.minute, 
         rightnow.second)
 
-    s3_training_predictions = "{}/{}/data/train/pred".format(args.s3_model_data, s3_model_run_id)
-    s3_testing_predictions = "{}/{}/data/test/pred".format(args.s3_model_data, s3_model_run_id)
-    s3_training_data = "{}/{}/data/train/input".format(args.s3_model_data, s3_model_run_id)
-    s3_testing_data = "{}/{}/data/test/input".format(args.s3_model_data, s3_model_run_id)
-    s3_model_artifacts = "{}/{}/artifacts".format(args.s3_model_data, s3_model_run_id)
+    s3_training_predictions = "s3://{}/models/{}/data/train/pred".format(s3url.bucket, s3_model_run_id)
+    s3_testing_predictions = "s3://{}/models/{}/data/test/pred".format(s3url.bucket, s3_model_run_id)
+    s3_training_data = "s3://{}/models/{}/data/train/input".format(s3url.bucket, s3_model_run_id)
+    s3_testing_data = "s3://{}/models/{}/data/test/input".format(s3url.bucket, s3_model_run_id)
+    s3_model_artifacts = "s3://{}/models/{}/artifacts".format(s3url.bucket, s3_model_run_id)
     
-    data_file = utils.s3_get_file(args.s3_model_data, input_path)
+    data_file = utils.s3_get_file(args.s3_raw_data, input_path)
 
     print('Starting the preprocess.')
     try:
         
         # read in training data
-        train_data = pd.read_csv(data_file)
+        raw_data = pd.read_csv(data_file)
 
         # pre process the training data
         X_data, y_data, vocab_size, max_length = data_process(raw_data)       
         
         X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.33, random_state=12345)
         
+        X_train = pd.DataFrame(X_train)
+        X_test = pd.DataFrame(X_test)
         train = pd.concat([X_train, y_train], axis=1, join='inner')
         test = pd.concat([X_test, y_test], axis=1, join='inner')
         
@@ -348,28 +299,31 @@ def main(argv=None):
         train.columns = cols
         test.columns = cols
         
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        
         # write data to local disk
-        train.to_csv(os.path.join(model_path, 'train.csv'), sep=',')
-        test.to_csv(os.path.join(model_path, 'test.csv'), sep=',')
+        train.to_csv(os.path.join(output_path, 'train.csv'), sep=',', index=False)
+        test.to_csv(os.path.join(output_path, 'test.csv'), sep=',', index=False)
         
         # upload training and test data to s3
-        utils.s3_upload_file('{}/train.csv'.format(s3_training_data), os.path.join(model_path, 'train.csv'))
-        utils.s3_upload_file('{}/test.csv'.format(s3_testing_data), os.path.join(model_path, 'test.csv'))
+        utils.s3_upload_file('{}/train.csv'.format(s3_training_data), os.path.join(output_path, 'train.csv'))
+        utils.s3_upload_file('{}/test.csv'.format(s3_testing_data), os.path.join(output_path, 'test.csv'))
         
         with open('/tmp/s3_training_predictions.txt', 'w') as f:
             f.write(s3_training_predictions)
         with open('/tmp/s3_testing_predictions.txt', 'w') as f:
             f.write(s3_testing_predictions)
         with open('/tmp/s3_training_data.txt', 'w') as f:
-            f.write('{}/train.csv'.format(s3_training_data)
+            f.write('{}/train.csv'.format(s3_training_data))
         with open('/tmp/s3_testing_data.txt', 'w') as f:
             f.write('{}/test.csv'.format(s3_testing_data))
         with open('/tmp/s3_model_artifacts.txt', 'w') as f:
             f.write(s3_model_artifacts)
         with open('/tmp/max_length.txt', 'w') as f:
-            f.write(max_length)
+            f.write(str(max_length))
         with open('/tmp/vocab_size.txt', 'w') as f:
-            f.write(vocab_size)
+            f.write(str(vocab_size))
     
         print('Preprocess is complete.')
         
