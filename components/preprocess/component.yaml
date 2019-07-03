@@ -29,3 +29,4 @@ implementation:
       s3_model_artifacts: /tmp/s3_model_artifacts.txt
       max_length: /tmp/max_length.txt
       vocab_size: /tmp/vocab_size.txt
+      
