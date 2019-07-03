@@ -6,8 +6,8 @@ inputs:
   - {name: s3_training_predictions, description: 'The location to save the predicted values.'}
   - {name: s3_model_artifacts, description: 'The location to save the model artifacts.'}
   - {name: model_name, description: 'The name of the model.'}
-  - {name: max-length, description: 'The name of the model.'}
-  - {name: vocab-size, description: 'The name of the model.'}
+  - {name: max_length, description: 'The name of the model.'}
+  - {name: vocab_size, description: 'The name of the model.'}
 outputs:
   - {name: s3_training_predictions,    description: 'Model artifacts url'}
   - {name: s3_model_artifacts,    description: 'Model artifacts url'}
@@ -20,9 +20,10 @@ implementation:
       --s3_training_data, {inputValue: s3_training_data},
       --s3_training_predictions, {inputValue: s3_training_predictions},
       --s3_model_artifacts, {inputValue: s3_model_artifacts},
-      --model_name, {inputValue: model_name}
+      --model_name, {inputValue: model_name},
+      --max_length, {inputValue: max_length},
+      --vocab_size, {inputValue: vocab_size} 
     ]
     fileOutputs:
-      s3_model_artifacts: /tmp/s3_training_predictions.txt
+      s3_training_predictions: /tmp/s3_training_predictions.txt
       s3_model_artifacts: /tmp/s3_model_artifacts.txt
-
