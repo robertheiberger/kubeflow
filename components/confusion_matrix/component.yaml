@@ -1,0 +1,14 @@
+name: 'confusion-matrix'
+description: Calculates confusion matrix
+inputs:
+  - {name: s3_targets, description: 'The location where the training data set resides.'}
+  - {name: s3_predictions, description: 'The location to save the predicted values.'}
+implementation:
+  container:
+    image: 001178237879.dkr.ecr.us-east-1.amazonaws.com/kubeflow-components:latest
+    command: ['python']
+    args: [
+      confusion_matrix.py,
+      --s3_targets, {inputValue: s3_targets},
+      --s3_predictions, {inputValue: s3_predictions}
+    ]
