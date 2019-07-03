@@ -25,3 +25,4 @@ class S3Url(object):
     @property
     def url(self):
         return self._parsed.geturl()
+    
