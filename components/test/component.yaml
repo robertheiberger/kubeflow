@@ -1,6 +1,6 @@
 name: 'testing'
 description: |
-  Train Machine Learning and Deep Learning Models
+  Test Machine Learning and Deep Learning Models
 inputs:
   - {name: s3_testing_data, description: 'The region where the training job launches.'}
   - {name: s3_testing_predictions, description: 'The registry path of the Docker image that contains the training algorithm.'}
@@ -13,7 +13,7 @@ implementation:
     image: 001178237879.dkr.ecr.us-east-1.amazonaws.com/kubeflow-components:latest
     command: ['python']
     args: [
-      train.py,
+      test.py,
       --s3_testing_data, {inputValue: s3_testing_data},
       --s3_testing_predictions, {inputValue: s3_testing_predictions},
       --s3_model_artifacts, {inputValue: s3_model_artifacts},
