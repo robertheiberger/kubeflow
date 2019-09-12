@@ -55,7 +55,6 @@ def encrypt_file(file_name, kms_key):
     
     return "Success"
 
-
 def decrypt_file(file_name, kms_key):
     
     return "Success"
@@ -68,8 +67,6 @@ def s3_upload_file(s3_location, local_file):
     
     s3.upload_file(local_file, s3f.bucket, s3f.key)
 
-    
-    
 def athena_get_file():
 
     creds = get_creds()
